@@ -1,7 +1,7 @@
 import { generateText, tool } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
-import { getChat } from "@/lib/llm";
+import { agentExecute } from "@/lib/agent";
 
 type GroceryItem = {
   id: string;
@@ -56,16 +56,8 @@ export async function POST(req: Request) {
   const { message, items } = await req.json();
   const currentItems: GroceryItem[] = items || [];
   try {
-    const chat = getChat();
-    if (chat) {
-      // Minimal LC call for natural language response (tools not wired in LC here for brevity)
-      const lcRes = await chat.invoke([
-        { role: "system", content: "You are a helpful grocery list assistant." },
-        { role: "user", content: message },
-      ] as any);
-
-      return Response.json({ response: lcRes?.content?.toString?.() ?? "", items: currentItems });
-    }
+    const agentRes = await agentExecute(message, currentItems);
+    if (agentRes) return Response.json({ response: agentRes.text, items: currentItems });
 
     const result = await generateText({
       model: openai("gpt-4o-mini"),

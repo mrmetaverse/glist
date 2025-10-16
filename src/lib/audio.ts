@@ -4,8 +4,7 @@ export async function recordAndTranscribe(): Promise<string | null> {
 
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const chunks: Blob[] = [];
-  // @ts-expect-error - MediaRecorder exists in browsers
-  const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+  const recorder: any = new (window as any).MediaRecorder(stream, { mimeType: "audio/webm" });
 
   return new Promise<string | null>((resolve) => {
     recorder.ondataavailable = (e: BlobEvent) => {
