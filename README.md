@@ -35,7 +35,7 @@ Future
 
 ## Local development
 
-Prereqs: Node 18+ (or 20+ recommended)
+Prereqs: Node 20 or 22 (recommended). Node 24 may cause a native crash (bus error) with Next.js/SWC on some Linux setups.
 
 Run the dev server:
 
