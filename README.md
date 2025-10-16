@@ -13,8 +13,37 @@ A minimal, fast grocery and to‑do list app. Start simple: create lists, add it
 - Next.js 15 (App Router), React 19
 - TypeScript, ESLint
 - Deployed on Vercel
+- Tailwind CSS (basic config), Radix UI primitives, lucide-react icons
+- LangChain (ChatOpenAI), AI SDK fallback
+- Supabase client scaffolding
 
-## Roadmap (incremental)
+## Status and roadmap (incremental)
+
+What’s DONE (this branch):
+- Repo + Vercel set up and deployed
+- UI scaffold: grocery list, conversation panel, text + voice input
+- Tailwind + simple UI components (`Button`, `Card`, `Input`, `Checkbox`, `ScrollArea`)
+- Whisper transcription route (`/api/transcribe`) with MediaRecorder fallback
+- Chat route (`/api/chat`) using a LangChain agent with tool-calling:
+  - Tools: addItem, removeItem, markCompleted, getList, comparePrices (mock pricing)
+  - Fallback to AI SDK `generateText` if `OPENAI_API_KEY` is not set
+- Supabase client/server scaffolding and `.env.local.example`
+
+What’s NEXT (suggested order):
+1) Supabase persistence
+	- Create tables: `lists`, `items` (and `profiles` if using Auth)
+	- Add RLS policies so users only access their own data
+	- Migrate the agent tools to read/write via Supabase instead of in-memory arrays
+2) Auth (optional now, useful for sync)
+	- Supabase Auth (email magic link or OAuth)
+	- Tie lists to user id; pass session to server routes
+3) Voice UX
+	- Press/hold to record; dynamic durations; show recording indicator
+	- Consider streaming transcription (later)
+4) UI polish
+	- Keyboard shortcuts, reorder items, list templates
+5) Pricing data
+	- Real price source integration (or manual per-store price entries in DB)
 
 MVP
 - [ ] Lists CRUD (single local list to start)
@@ -48,11 +77,22 @@ Open http://localhost:3000
 
 Entry point: `src/app/page.tsx`
 
+Key server routes:
+- `POST /api/chat` → LangChain agent first; AI SDK fallback
+- `POST /api/transcribe` → Whisper (OpenAI) transcription
+
+Key libs:
+- Agent: `src/lib/agent.ts`
+- LLM factory (optional): `src/lib/llm.ts`
+- Supabase: `src/lib/supabase/*`
+- Audio helper: `src/lib/audio.ts`
+
 ## Project structure
 
 - `src/app` – App Router pages
 - `public` – static assets
 - `eslint.config.mjs`, `tsconfig.json` – config
+- `tailwind.config.ts`, `postcss.config.js` – Tailwind setup
 
 ## Deployment (Vercel)
 
@@ -60,7 +100,7 @@ This repo is designed to deploy out-of-the-box on Vercel. Once the GitHub repo i
 
 1. Import project from GitHub, framework = Next.js
 2. Default build: `next build` and `next start` (Vercel auto-detects)
-3. Set env vars if needed (none yet)
+3. Set env vars (OpenAI + Supabase) in Vercel before production use
 
 ### Environment variables
 
@@ -75,6 +115,16 @@ Optional (server):
 
 Models:
 - OPENAI_API_KEY=             # For chat + Whisper
+
+Quick start (local):
+
+```bash
+cp .env.local.example .env.local
+# fill values for SUPABASE + OPENAI
+npm install
+nvm use 22 # recommended
+npm run dev
+```
 
 
 CLI (optional):
