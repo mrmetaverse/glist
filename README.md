@@ -62,6 +62,21 @@ This repo is designed to deploy out-of-the-box on Vercel. Once the GitHub repo i
 2. Default build: `next build` and `next start` (Vercel auto-detects)
 3. Set env vars if needed (none yet)
 
+### Environment variables
+
+Create a `.env.local` for local dev and configure the same in Vercel Project Settings → Environment Variables:
+
+Required (Supabase):
+- NEXT_PUBLIC_SUPABASE_URL=
+- NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+Optional (server):
+- SUPABASE_SERVICE_ROLE_KEY=  # Only for server actions/admin tasks
+
+Models:
+- OPENAI_API_KEY=             # For chat + Whisper
+
+
 CLI (optional):
 
 ```bash

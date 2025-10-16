@@ -1,5 +1,7 @@
 import { generateText, tool } from "ai";
+import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { getChat } from "@/lib/llm";
 
 type GroceryItem = {
   id: string;
@@ -54,8 +56,19 @@ export async function POST(req: Request) {
   const { message, items } = await req.json();
   const currentItems: GroceryItem[] = items || [];
   try {
+    const chat = getChat();
+    if (chat) {
+      // Minimal LC call for natural language response (tools not wired in LC here for brevity)
+      const lcRes = await chat.invoke([
+        { role: "system", content: "You are a helpful grocery list assistant." },
+        { role: "user", content: message },
+      ] as any);
+
+      return Response.json({ response: lcRes?.content?.toString?.() ?? "", items: currentItems });
+    }
+
     const result = await generateText({
-      model: "openai/gpt-4o-mini",
+      model: openai("gpt-4o-mini"),
       system:
         "You are a helpful grocery list assistant. You help users manage their shopping list through natural conversation.\n\nYou can:\n- Add items to their list with quantities and units\n- Remove items from their list\n- Mark items as completed\n- Answer questions about their list\n- Compare prices across stores\n- Suggest categories for items\n- Provide helpful shopping tips\n\nBe conversational, friendly, and concise. When users ask about their list, describe it naturally.\nWhen adding items, try to infer reasonable quantities if not specified.",
       prompt: message,
@@ -145,10 +158,7 @@ export async function POST(req: Request) {
       maxSteps: 5,
     });
 
-    return Response.json({
-      response: result.text,
-      items: currentItems,
-    });
+    return Response.json({ response: result.text, items: currentItems });
   } catch (error) {
     console.error("[v0] Error in chat API:", error);
     return Response.json({ error: "Failed to process request" }, { status: 500 });

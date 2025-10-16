@@ -9,6 +9,7 @@ import { Mic, MicOff, Loader2, Send } from "lucide-react";
 import { GroceryList } from "@/components/grocery-list";
 import { ConversationHistory } from "@/components/conversation-history";
 import { useToast } from "@/hooks/use-toast";
+import { recordAndTranscribe } from "@/lib/audio";
 
 export type GroceryItem = {
   id: string;
@@ -90,18 +91,31 @@ export default function Home() {
   }, []);
 
   const toggleListening = () => {
-    if (!recognitionRef.current) {
-      toast?.({ title: "Not supported", description: "Voice input is not supported in your browser.", variant: "destructive" });
+    // Prefer webkitSpeechRecognition when available; otherwise use media recorder + Whisper route
+    if (recognitionRef.current) {
+      if (isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } else {
+        setTranscript("");
+        recognitionRef.current.start();
+        setIsListening(true);
+      }
       return;
     }
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      setTranscript("");
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
+
+    // Fallback to Whisper transcription via our API
+    (async () => {
+      setIsProcessing(true);
+      const text = await recordAndTranscribe();
+      setIsProcessing(false);
+      if (text) {
+        setTranscript(text);
+        await handleInput(text);
+      } else {
+        toast?.({ title: "Voice input error", description: "Could not capture audio.", variant: "destructive" });
+      }
+    })();
   };
 
   const handleInput = async (text: string) => {
